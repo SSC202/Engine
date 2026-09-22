@@ -1,1 +1,0 @@
-var modelInfo = {model:"VF_Mode"};var modelHierarchy=[{model:"VF_Mode",relativePath:"_internal.html",parent:"null"},];

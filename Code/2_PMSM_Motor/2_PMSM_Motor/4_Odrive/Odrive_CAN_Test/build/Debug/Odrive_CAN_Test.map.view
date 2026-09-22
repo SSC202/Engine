@@ -1,3 +1,0 @@
-tool: GCC
-fileName: Odrive_CAN_Test.map
-elfName: Odrive_CAN_Test.elf

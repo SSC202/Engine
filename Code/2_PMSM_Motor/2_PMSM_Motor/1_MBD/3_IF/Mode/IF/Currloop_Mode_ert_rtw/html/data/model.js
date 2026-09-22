@@ -1,1 +1,0 @@
-var modelInfo = {model:"Currloop_Mode"};var modelHierarchy=[{model:"Currloop_Mode",relativePath:"_internal.html",parent:"null"},];

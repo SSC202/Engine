@@ -1,1 +1,0 @@
-var reportPages = [["摘要","VF_Mode_survey.html"],["子系统报告","VF_Mode_subsystems.html"],["代码接口报告","VF_Mode_interface.html"],["可追溯性报告","VF_Mode_trace.html"],["静态代码指标报告","VF_Mode_metrics.html"],["已消除模块","VF_Mode_reducedblocks.html"],["代码替换报告","VF_Mode_replacements.html"],["代码生成器假设","VF_Mode_coderassumptions.html"]];

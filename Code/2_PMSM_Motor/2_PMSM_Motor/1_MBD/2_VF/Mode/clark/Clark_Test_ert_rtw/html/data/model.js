@@ -1,1 +1,0 @@
-var modelInfo = {model:"Clark_Test"};var modelHierarchy=[{model:"Clark_Test",relativePath:"_internal.html",parent:"null"},];
