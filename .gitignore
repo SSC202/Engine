@@ -1,11 +1,33 @@
+# IDE and editor settings
 .eide/
+.eide.usr.ctx.json
 .vscode/
+.settings/
+
+*.ept
+*.eide-template
+
+# Build output directories
+build/
+bin/
+obj/
+out/
+.dep/
+
+# MATLAB / Simulink generated output
 slprj/
+*_ert_rtw/
+*.slxc
+
+# Book and local documentation output
 Book/
 
+# Maxwell generated output
 *.aedtresults/
 
+# Keil / ARM compiler generated output
 *.uvguix.*
+*.axf
 *.htm
 *.o
 *.d
@@ -13,10 +35,35 @@ Book/
 *.map
 *.crf
 *.lnp
-*.axf
 *.dep
 *.iex
-*.slxc
 
+# Additional compiler and programmer output
+*.dmp
+*.list
+*.lst
+*.map.view
+*.objlist
+*.params
+*.jlink
+
+# Logs and temporary files
+*.log
+*.lock
+*.tmp
+*.bak
+*~
+
+# Operating system files
+Thumbs.db
+desktop.ini
+
+# Local/private notes
 Note/5_其他电机/1_有限转角电机/1_LAVM原理
 Note/3_永磁同步电机/2_永磁同步电机/1_基本理论/8_低载波比的数字控制器设计
+
+# Optional firmware output rules
+# Only enable these if all generated firmware files should be ignored.
+# *.hex
+# *.elf
+# *.bin
