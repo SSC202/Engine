@@ -1,0 +1,64 @@
+name: Deploy Engine Notes Web
+
+on:
+  push:
+    branches:
+      - V3.0
+    paths:
+      - "Web/**"
+      - "Note/**"
+      - "assets/picture_1.jpg"
+      - ".github/workflows/deploy-web.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: Web
+        run: npm ci
+
+      - name: Build site
+        working-directory: Web
+        run: npm run build
+
+      - name: Check generated pages
+        working-directory: Web
+        run: npm run check
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: Web/dist
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
