@@ -97,6 +97,15 @@ function sectionFor(relativePath, fallback) {
     : { name: fallback, order: fallback === '专题概览' ? '0' : '999' };
 }
 
+function nestedItemFor(relativePath, category, section) {
+  if (category !== '永磁同步电机' || section !== '永磁同步电机') return null;
+  const directory = relativePath.split(path.sep).slice(2, -1)
+    .find(name => !/^(?:read_note|assets)$/i.test(name));
+  return directory
+    ? { name: trimOrder(directory), order: directory }
+    : { name: '专题概览', order: '0' };
+}
+
 function readingTime(markdown) {
   return Math.max(1, Math.ceil(stripMarkdown(markdown).length / 500));
 }
@@ -277,20 +286,41 @@ function topicPage(category, categories, imageJobs) {
   return shell({ title: `${category.name} · 电机驱动笔记`, description: category.description, body, root: '..', pageClass: 'topic-page' });
 }
 
-function subtopicPage(subtopic, category) {
+function subtopicPage(subtopic, category, imageJobs) {
   const index = category.subtopics.findIndex(item => item.slug === subtopic.slug);
   const previous = category.subtopics[index - 1];
   const next = category.subtopics[index + 1];
   const rows = subtopic.articles.map(topicArticleRow).join('');
   const resources = subtopic.resources.map(resourceRow).join('');
+  const overview = subtopic.overview ? renderMarkdown(subtopic.overview, imageJobs) : '';
+  const collections = subtopic.collections?.length ? `<section class="subtopic-content"><div class="section-heading"><div><span>Contents</span><h2>子项</h2></div><p>按内容方向继续阅读</p></div><nav class="subtopic-nav collection-nav" aria-label="永磁同步电机子项">${subtopic.collections.map((collection, collectionIndex) => `<a href="../collections/${collection.slug}.html"><span>${String(collectionIndex + 1).padStart(2, '0')}</span><b>${htmlEscape(collection.name)}</b><small>${collection.articles.length} 篇 · ${collection.resources.length} 份资料</small></a>`).join('')}</nav></section>` : '';
   const body = `<div class="page-shell">${siteHeader('..')}<main class="topic-main">
     <nav class="breadcrumb-trail" aria-label="面包屑"><a href="../index.html#paths">学习路径</a><span>/</span><a href="../topics/${category.slug}.html">${htmlEscape(category.name)}</a></nav>
     <header class="subtopic-hero"><div><span class="topic-kicker">${htmlEscape(category.name)} · ${String(index + 1).padStart(2, '0')}</span><h1>${htmlEscape(subtopic.name)}</h1><p>${subtopic.articles.length} 篇笔记${subtopic.resources.length ? ` · ${subtopic.resources.length} 份阅读资料` : ''}</p></div><a class="back-to-topic" href="../topics/${category.slug}.html">${icon('back')} 返回专题概览</a></header>
-    ${rows ? `<section class="subtopic-content"><div class="section-heading"><div><span>Articles</span><h2>文章</h2></div><p>按目录顺序阅读</p></div><div class="topic-article-list">${rows}</div></section>` : ''}
-    ${resources ? `<section class="resources-section"><div class="section-heading"><div><span>References</span><h2>阅读资料</h2></div><p>点击条目下载 PDF</p></div><div class="resource-list">${resources}</div></section>` : ''}
+    ${overview ? `<section class="topic-overview"><div class="section-heading"><div><span>Overview</span><h2>专题概览</h2></div></div><article class="markdown-body">${overview}</article></section>` : ''}
+    ${collections || (rows ? `<section class="subtopic-content"><div class="section-heading"><div><span>Articles</span><h2>文章</h2></div><p>按目录顺序阅读</p></div><div class="topic-article-list">${rows}</div></section>` : '')}
+    ${!collections && resources ? `<section class="resources-section"><div class="section-heading"><div><span>References</span><h2>阅读资料</h2></div><p>点击条目下载 PDF</p></div><div class="resource-list">${resources}</div></section>` : ''}
     <nav class="topic-pagination" aria-label="相邻子专题">${previous ? `<a href="${previous.slug}.html"><small>上一子专题</small><b>${htmlEscape(previous.name)}</b></a>` : '<span></span>'}${next ? `<a class="next" href="${next.slug}.html"><small>下一子专题</small><b>${htmlEscape(next.name)}</b></a>` : '<span></span>'}</nav></main>
     <footer><span>Engine Notes</span><p>电机驱动理论与工程实践。</p><a href="#top">回到顶部 ↑</a></footer></div>`;
   return shell({ title: `${subtopic.name} · ${category.name}`, description: `${category.name}中的${subtopic.name}学习笔记。`, body, root: '..', pageClass: 'topic-page' });
+}
+
+function collectionPage(collection, subtopic, category, imageJobs) {
+  const index = subtopic.collections.findIndex(item => item.slug === collection.slug);
+  const previous = subtopic.collections[index - 1];
+  const next = subtopic.collections[index + 1];
+  const overview = collection.overview ? renderMarkdown(collection.overview, imageJobs) : '';
+  const rows = collection.articles.map(topicArticleRow).join('');
+  const resources = collection.resources.map(resourceRow).join('');
+  const body = `<div class="page-shell">${siteHeader('..')}<main class="topic-main">
+    <nav class="breadcrumb-trail" aria-label="面包屑"><a href="../topics/${category.slug}.html">${htmlEscape(category.name)}</a><span>/</span><a href="../subtopics/${subtopic.slug}.html">${htmlEscape(subtopic.name)}</a></nav>
+    <header class="subtopic-hero"><div><span class="topic-kicker">${htmlEscape(subtopic.name)} · ${String(index + 1).padStart(2, '0')}</span><h1>${htmlEscape(collection.name)}</h1><p>${collection.articles.length} 篇笔记${collection.resources.length ? ` · ${collection.resources.length} 份阅读资料` : ''}</p></div><a class="back-to-topic" href="../subtopics/${subtopic.slug}.html">${icon('back')} 返回子项列表</a></header>
+    ${overview ? `<section class="topic-overview"><div class="section-heading"><div><span>Overview</span><h2>子项概览</h2></div></div><article class="markdown-body">${overview}</article></section>` : ''}
+    ${rows ? `<section class="subtopic-content"><div class="section-heading"><div><span>Articles</span><h2>文章</h2></div><p>按目录顺序阅读</p></div><div class="topic-article-list">${rows}</div></section>` : ''}
+    ${resources ? `<section class="resources-section"><div class="section-heading"><div><span>References</span><h2>阅读资料</h2></div><p>点击条目下载 PDF</p></div><div class="resource-list">${resources}</div></section>` : ''}
+    <nav class="topic-pagination" aria-label="相邻子项">${previous ? `<a href="${previous.slug}.html"><small>上一子项</small><b>${htmlEscape(previous.name)}</b></a>` : '<span></span>'}${next ? `<a class="next" href="${next.slug}.html"><small>下一子项</small><b>${htmlEscape(next.name)}</b></a>` : '<span></span>'}</nav></main>
+    <footer><span>Engine Notes</span><p>电机驱动理论与工程实践。</p><a href="#top">回到顶部 ↑</a></footer></div>`;
+  return shell({ title: `${collection.name} · ${subtopic.name}`, description: `${subtopic.name}中的${collection.name}学习笔记。`, body, root: '..', pageClass: 'topic-page' });
 }
 
 function extractToc(html) {
@@ -310,8 +340,10 @@ function articlePage(article, imageJobs) {
   const toc = headings.length ? headings.map(item => `<a class="toc-${item.tag}" href="#${item.id}">${htmlEscape(item.label)}</a>`).join('') : '<span class="toc-empty">本文暂无章节目录</span>';
   const previous = article.previous;
   const next = article.next;
+  const backHref = article.collectionSlug ? `../collections/${article.collectionSlug}.html` : `../subtopics/${article.subtopicSlug}.html`;
+  const backLabel = article.collection || article.section;
   const body = `<div class="reading-shell">${siteHeader('..')}<button class="toc-toggle" id="toc-toggle" type="button" aria-label="打开文章目录" aria-expanded="false">${icon('menu')}</button>
-    <aside class="article-aside" id="article-aside"><div class="toc-head"><span>本文目录</span><button id="toc-close" type="button" aria-label="关闭文章目录">${icon('close')}</button></div><nav class="toc" aria-label="文章目录">${toc}</nav><a class="back-link" href="../subtopics/${article.subtopicSlug}.html">${icon('back')} 返回${htmlEscape(article.section)}</a></aside>
+    <aside class="article-aside" id="article-aside"><div class="toc-head"><span>本文目录</span><button id="toc-close" type="button" aria-label="关闭文章目录">${icon('close')}</button></div><nav class="toc" aria-label="文章目录">${toc}</nav><a class="back-link" href="${backHref}">${icon('back')} 返回${htmlEscape(backLabel)}</a></aside>
     <main class="article-main"><header class="article-header"><a class="article-category" href="../topics/${article.categorySlug}.html">${htmlEscape(article.category)}</a><h1>${htmlEscape(article.title)}</h1><div class="article-info"><span>${article.minutes} 分钟阅读</span><span>${article.wordCount.toLocaleString('zh-CN')} 字</span><span>${article.modifiedDate}</span></div></header>
       <article class="markdown-body">${content}</article><nav class="article-pagination" aria-label="相邻文章">${previous ? `<a href="${previous.slug}.html"><small>上一篇</small><span>${htmlEscape(previous.title)}</span></a>` : '<span></span>'}${next ? `<a class="next" href="${next.slug}.html"><small>下一篇</small><span>${htmlEscape(next.title)}</span></a>` : '<span></span>'}</nav></main></div>`;
   return shell({ title: `${article.title} · 电机驱动笔记`, description: article.excerpt, body, root: '..', pageClass: 'article-page', script: 'article.js' });
@@ -332,6 +364,7 @@ async function build() {
   await mkdir(path.join(distDir, 'articles'), { recursive: true });
   await mkdir(path.join(distDir, 'topics'), { recursive: true });
   await mkdir(path.join(distDir, 'subtopics'), { recursive: true });
+  await mkdir(path.join(distDir, 'collections'), { recursive: true });
 
   const markdownFiles = (await visibleNoteFiles(['.md'])).filter(file => path.dirname(file) !== notesDir);
   const pdfFiles = await visibleNoteFiles(['.pdf']);
@@ -341,27 +374,34 @@ async function build() {
     const info = await stat(absolutePath);
     const pathParts = relativePath.split(path.sep).slice(1, -1).map(trimOrder).filter(name => !/^read_note$/i.test(name));
     const section = sectionFor(relativePath, '专题概览');
+    const category = categoryFor(relativePath);
+    const nestedItem = nestedItemFor(relativePath, category, section.name);
     return {
       absolutePath, relativePath, markdown, slug: slugFor(relativePath),
       title: extractTitle(markdown, path.basename(absolutePath)), excerpt: extractExcerpt(markdown),
-      category: categoryFor(relativePath), section: section.name, sectionOrder: section.order,
-      pathLabel: pathParts.join(' / ') || categoryFor(relativePath),
+      category, section: section.name, sectionOrder: section.order,
+      collection: nestedItem?.name || null, collectionOrder: nestedItem?.order || null,
+      isNestedOverview: Boolean(nestedItem && /^readme\.md$/i.test(path.basename(absolutePath))),
+      pathLabel: pathParts.join(' / ') || category,
       minutes: readingTime(markdown), wordCount: stripMarkdown(markdown).length,
       modified: info.mtimeMs, modifiedDate: info.mtime.toLocaleDateString('zh-CN')
     };
   }));
   sourceArticles.sort((a, b) => a.relativePath.localeCompare(b.relativePath, 'zh-CN', { numeric: true }));
-  const articles = sourceArticles.filter(article => article.section !== '专题概览');
+  const articles = sourceArticles.filter(article => article.section !== '专题概览' && !article.isNestedOverview);
 
   const resources = await Promise.all(pdfFiles.map(async absolutePath => {
     const relativePath = path.relative(notesDir, absolutePath);
     const info = await stat(absolutePath);
     const pathParts = relativePath.split(path.sep).slice(1, -1).map(trimOrder).filter(name => !/^read_note$/i.test(name));
     const section = sectionFor(relativePath, '专题资料');
+    const category = categoryFor(relativePath);
+    const nestedItem = nestedItemFor(relativePath, category, section.name);
     return {
-      title: trimOrder(path.basename(absolutePath, path.extname(absolutePath))), category: categoryFor(relativePath),
+      title: trimOrder(path.basename(absolutePath, path.extname(absolutePath))), category,
       section: section.name, sectionOrder: section.order,
-      pathLabel: pathParts.join(' / ') || categoryFor(relativePath), size: humanSize(info.size),
+      collection: nestedItem?.name || null, collectionOrder: nestedItem?.order || null,
+      pathLabel: pathParts.join(' / ') || category, size: humanSize(info.size),
       url: `${repositoryUrl}/raw/refs/heads/${repositoryBranch}/Note/${urlPath(relativePath)}`
     };
   }));
@@ -395,6 +435,27 @@ async function build() {
         resources: subtopicResources
       };
     }).sort((a, b) => a.order.localeCompare(b.order, 'zh-CN', { numeric: true }));
+    const nestedSubtopic = category.subtopics.find(subtopic => category.name === '永磁同步电机' && subtopic.name === '永磁同步电机');
+    if (nestedSubtopic) {
+      nestedSubtopic.overview = sourceArticles.find(article => article.category === category.name && article.section === nestedSubtopic.name && article.collection === '专题概览' && article.isNestedOverview) || null;
+      const collectionNames = [...new Set([
+        ...nestedSubtopic.articles.map(article => article.collection),
+        ...nestedSubtopic.resources.map(resource => resource.collection)
+      ].filter(name => name && name !== '专题概览'))];
+      nestedSubtopic.collections = collectionNames.map(name => {
+        const collectionArticles = nestedSubtopic.articles.filter(article => article.collection === name);
+        const collectionResources = nestedSubtopic.resources.filter(resource => resource.collection === name);
+        const order = collectionArticles[0]?.collectionOrder || collectionResources[0]?.collectionOrder || name;
+        return {
+          name,
+          order,
+          slug: slugFor(`collection:${category.name}:${nestedSubtopic.name}:${name}`),
+          overview: sourceArticles.find(article => article.category === category.name && article.section === nestedSubtopic.name && article.collection === name && article.isNestedOverview) || null,
+          articles: collectionArticles,
+          resources: collectionResources
+        };
+      }).sort((a, b) => a.order.localeCompare(b.order, 'zh-CN', { numeric: true }));
+    }
     category.articles.forEach(article => {
       article.categorySlug = category.slug;
       article.subtopicSlug = category.subtopics.find(subtopic => subtopic.name === article.section)?.slug;
@@ -402,6 +463,11 @@ async function build() {
     category.subtopics.forEach(subtopic => subtopic.articles.forEach((article, index) => {
       article.previous = subtopic.articles[index - 1] || null;
       article.next = subtopic.articles[index + 1] || null;
+    }));
+    nestedSubtopic?.collections.forEach(collection => collection.articles.forEach((article, index) => {
+      article.collectionSlug = collection.slug;
+      article.previous = collection.articles[index - 1] || null;
+      article.next = collection.articles[index + 1] || null;
     }));
   }
 
@@ -412,7 +478,10 @@ async function build() {
   for (const category of categories) {
     await writeFile(path.join(distDir, 'topics', `${category.slug}.html`), topicPage(category, categories, imageJobs), 'utf8');
     for (const subtopic of category.subtopics) {
-      await writeFile(path.join(distDir, 'subtopics', `${subtopic.slug}.html`), subtopicPage(subtopic, category), 'utf8');
+      await writeFile(path.join(distDir, 'subtopics', `${subtopic.slug}.html`), subtopicPage(subtopic, category, imageJobs), 'utf8');
+      for (const collection of subtopic.collections || []) {
+        await writeFile(path.join(distDir, 'collections', `${collection.slug}.html`), collectionPage(collection, subtopic, category, imageJobs), 'utf8');
+      }
     }
   }
   await Promise.all(imageJobs.map(copyImage));
@@ -425,6 +494,7 @@ async function build() {
   const sitemap = [
     ...categories.map(item => `topics/${item.slug}.html`),
     ...categories.flatMap(category => category.subtopics.map(item => `subtopics/${item.slug}.html`)),
+    ...categories.flatMap(category => category.subtopics.flatMap(subtopic => (subtopic.collections || []).map(item => `collections/${item.slug}.html`))),
     ...articles.map(item => `articles/${item.slug}.html`)
   ];
   await writeFile(path.join(distDir, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>index.html</loc></url>${sitemap.map(item => `<url><loc>${item}</loc></url>`).join('')}</urlset>`, 'utf8');
