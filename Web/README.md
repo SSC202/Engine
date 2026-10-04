@@ -2,6 +2,8 @@
 
 这个目录是 `Note/` 电机驱动笔记的独立静态网站。构建过程只读取原始笔记，不会修改 `Note/` 中的任何文件。
 
+在线访问：<https://ssc202.github.io/Engine/>
+
 ## 本地预览
 
 ```powershell
